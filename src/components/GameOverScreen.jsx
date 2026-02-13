@@ -1,4 +1,5 @@
 import { colors, fonts, crt } from '../styles/theme.js';
+import SurvivorSprite from './SurvivorSprite.jsx';
 
 const WIN_ART = `
 ╔══════════════════════════════════════╗
@@ -27,6 +28,64 @@ const LOSE_ART = `
 ║       L   O   S   S                  ║
 ║                                      ║
 ╚══════════════════════════════════════╝`;
+
+function DeathMemorial({ dead }) {
+  // Sort by deathDay, group by day
+  const sorted = [...dead].sort((a, b) => (a.deathDay || 0) - (b.deathDay || 0));
+  const groups = [];
+  let currentDay = null;
+  sorted.forEach(s => {
+    const day = s.deathDay || '?';
+    if (day !== currentDay) {
+      groups.push({ day, entries: [s] });
+      currentDay = day;
+    } else {
+      groups[groups.length - 1].entries.push(s);
+    }
+  });
+
+  return (
+    <div style={{ marginTop: '24px', maxWidth: '400px', width: '100%' }}>
+      <div style={{ fontSize: '10px', color: colors.danger, letterSpacing: '2px', marginBottom: '8px' }}>
+        THE DEAD ({dead.length})
+      </div>
+      {groups.map((group, gi) => (
+        <div key={gi}>
+          <div style={{
+            fontSize: '9px',
+            color: colors.faint,
+            letterSpacing: '3px',
+            textAlign: 'center',
+            margin: '8px 0 6px',
+          }}>
+            ── DAY {group.day} ──
+          </div>
+          {group.entries.map(s => (
+            <div key={s.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '11px',
+              color: colors.dim,
+              padding: '4px 0',
+              borderBottom: `1px solid ${colors.faint}`,
+            }}>
+              <div style={{ filter: 'grayscale(100%)', opacity: 0.6, flexShrink: 0 }}>
+                <SurvivorSprite survivor={s} size={32} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ color: colors.danger }}>✕</span> {s.name}, {s.age}
+                <div style={{ fontSize: '9px', color: colors.faint, marginTop: '1px' }}>
+                  {s.causeOfDeath || 'Unknown'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function GameOverScreen({ state, onRestart }) {
   const won = state.gameWon;
@@ -68,10 +127,10 @@ export default function GameOverScreen({ state, onRestart }) {
       {/* Stats */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: '1fr 1fr 1fr',
         gap: '16px',
         marginTop: '24px',
-        maxWidth: '400px',
+        maxWidth: '500px',
         width: '100%',
       }}>
         <div style={{ textAlign: 'center' }}>
@@ -84,26 +143,14 @@ export default function GameOverScreen({ state, onRestart }) {
             {state.log.filter(l => l.startsWith('⚖') || l.startsWith('→') || l.startsWith('✓') || l.startsWith('✕')).length}
           </div>
         </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: colors.dim, letterSpacing: '2px' }}>LIVES LOST</div>
+          <div style={{ fontSize: '24px', color: colors.danger, ...crt.dangerGlow }}>{dead.length}</div>
+        </div>
       </div>
 
-      {/* Dead */}
-      {dead.length > 0 && (
-        <div style={{ marginTop: '24px', maxWidth: '400px', width: '100%' }}>
-          <div style={{ fontSize: '10px', color: colors.danger, letterSpacing: '2px', marginBottom: '6px' }}>
-            THE DEAD ({dead.length})
-          </div>
-          {dead.map(s => (
-            <div key={s.id} style={{
-              fontSize: '11px',
-              color: colors.dim,
-              padding: '3px 0',
-              borderBottom: `1px solid ${colors.faint}`,
-            }}>
-              <span style={{ color: colors.danger }}>✕</span> {s.name}, {s.age} — {s.causeOfDeath || 'Unknown'}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Death Memorial */}
+      {dead.length > 0 && <DeathMemorial dead={dead} />}
 
       {/* Survivors */}
       {alive.length > 0 && (

@@ -48,15 +48,20 @@ export function generateSurvivor(id) {
     pregnant: false,
     quarantined: false,
     causeOfDeath: null,
+    deathDay: null,
+    weapon: null,
+    armor: null,
   };
 }
 
 export function generateStartingGroup() {
   resetNames();
+  usedNames.push('Exie');
   const survivors = [];
   for (let i = 0; i < 8; i++) {
     survivors.push(generateSurvivor(i));
   }
+  survivors[0].name = 'Exie';
   return survivors;
 }
 

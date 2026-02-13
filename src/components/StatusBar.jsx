@@ -1,12 +1,31 @@
 import { colors, fonts, crt, shared, resourceColor } from '../styles/theme.js';
 import { STARTING_FOOD, STARTING_MEDICINE, STARTING_AMMO } from '../game/constants.js';
 
-export default function StatusBar({ food, medicine, ammo, groupMorale }) {
+function DeltaIndicator({ current, prev }) {
+  if (prev == null) return null;
+  const delta = current - prev;
+  if (delta === 0) return null;
+  const positive = delta > 0;
+  return (
+    <div style={{
+      fontSize: '10px',
+      fontFamily: fonts.mono,
+      color: positive ? colors.primary : colors.danger,
+      fontWeight: 'bold',
+      animation: 'deltaFade 2s ease-out forwards',
+    }}>
+      {positive ? '+' : ''}{delta}
+    </div>
+  );
+}
+
+export default function StatusBar({ food, medicine, ammo, groupMorale, prevResources }) {
+  const prev = prevResources || {};
   const resources = [
-    { label: 'FOOD', value: food, max: STARTING_FOOD * 1.5, critical: food === 0 },
-    { label: 'MED', value: medicine, max: STARTING_MEDICINE * 1.5, critical: medicine === 0 },
-    { label: 'AMMO', value: ammo, max: STARTING_AMMO * 1.5, critical: ammo === 0 },
-    { label: 'MORALE', value: groupMorale, max: 100, critical: groupMorale < 15 },
+    { label: 'FOOD', value: food, max: STARTING_FOOD * 1.5, critical: food === 0, prev: prev.food },
+    { label: 'MED', value: medicine, max: STARTING_MEDICINE * 1.5, critical: medicine === 0, prev: prev.medicine },
+    { label: 'AMMO', value: ammo, max: STARTING_AMMO * 1.5, critical: ammo === 0, prev: prev.ammo },
+    { label: 'MORALE', value: groupMorale, max: 100, critical: groupMorale < 15, prev: prev.morale },
   ];
 
   return (
@@ -43,12 +62,18 @@ export default function StatusBar({ food, medicine, ammo, groupMorale }) {
           }}>
             {Math.round(r.value)}
           </div>
+          <DeltaIndicator key={`${r.value}_${r.prev}`} current={r.value} prev={r.prev} />
         </div>
       ))}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
+        }
+        @keyframes deltaFade {
+          0% { opacity: 1; }
+          70% { opacity: 1; }
+          100% { opacity: 0; }
         }
       `}</style>
     </div>

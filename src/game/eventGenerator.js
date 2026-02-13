@@ -24,6 +24,12 @@ import {
   generateShelterEvent,
   generateNightHordeEvent,
 } from './events/stranger.js';
+import {
+  generateArmoryBreachEvent,
+  generateHuntingLodgeEvent,
+  generatePoliceStationEvent,
+  generateFieldHospitalEvent,
+} from './events/lootEvents.js';
 
 const EVENT_GENERATORS = [
   { key: 'bite_check', gen: generateBiteCheckEvent, baseWeight: 18 },
@@ -50,6 +56,11 @@ const EVENT_GENERATORS = [
   { key: 'rare_bunker', gen: generateBunkerEvent, baseWeight: 3 },
   { key: 'rare_crash', gen: generateCrashSiteEvent, baseWeight: 2 },
   { key: 'rare_pharmacy', gen: generatePharmacyEvent, baseWeight: 3 },
+  // Loot events — equipment drops
+  { key: 'loot_armory', gen: generateArmoryBreachEvent, baseWeight: 3 },
+  { key: 'loot_lodge', gen: generateHuntingLodgeEvent, baseWeight: 3 },
+  { key: 'loot_police', gen: generatePoliceStationEvent, baseWeight: 3 },
+  { key: 'loot_hospital', gen: generateFieldHospitalEvent, baseWeight: 3 },
 ];
 
 let recentEvents = [];
@@ -77,6 +88,10 @@ function getWeight(entry, state) {
   if (entry.key.startsWith('rare_') && state.day > 7) w += 2;
   if (entry.key.startsWith('rare_') && state.day > 15) w += 2;
 
+  // Loot events — appear after day 5, shared cooldown
+  if (entry.key.startsWith('loot_') && state.day <= 5) w = 0;
+  if (entry.key.startsWith('loot_') && state.day > 5) w += 2;
+
   // Cooldowns
   if (entry.key === 'pregnancy' && recentEvents.slice(-8).includes('pregnancy')) w = 0;
   if (entry.key === 'child' && recentEvents.slice(-6).includes('child')) w = 0;
@@ -85,6 +100,7 @@ function getWeight(entry, state) {
   if (entry.key === 'shelter' && recentEvents.slice(-8).includes('shelter')) w = 0;
   if (entry.key === 'night_horde' && recentEvents.slice(-6).includes('night_horde')) w = 0;
   if (entry.key.startsWith('rare_') && recentEvents.slice(-4).some(e => e.startsWith('rare_'))) w = 0;
+  if (entry.key.startsWith('loot_') && recentEvents.slice(-5).some(e => e.startsWith('loot_'))) w = 0;
 
   // Avoid back-to-back
   if (recentEvents.length > 0 && recentEvents[recentEvents.length - 1] === entry.key) {

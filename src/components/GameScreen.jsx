@@ -1,13 +1,47 @@
 import { useState } from 'react';
 import { colors, fonts, crt, shared } from '../styles/theme.js';
-import { PHASE_NAMES, PHASE_ICONS } from '../game/constants.js';
+import { PHASE_NAMES, PHASE_ICONS, WIN_DAY } from '../game/constants.js';
 import { aliveSurvivors } from '../game/survivor.js';
-import { RARE_ITEMS } from '../game/items.js';
+import { RARE_ITEMS, hasItem } from '../game/items.js';
 import StatusBar from './StatusBar.jsx';
 import EventCard from './EventCard.jsx';
 import SurvivorRoster from './SurvivorRoster.jsx';
 import GameLog from './GameLog.jsx';
 import TutorialScreen from './TutorialScreen.jsx';
+
+function RescueBar({ day, items }) {
+  const effectiveWinDay = hasItem({ items }, 'military_radio') ? WIN_DAY - 3 : WIN_DAY;
+  const progress = Math.min(1, (day - 1) / (effectiveWinDay - 1));
+  const barColor = progress < 0.67 ? colors.primary : progress < 0.83 ? colors.amber : colors.danger;
+
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      <div style={{
+        height: '4px',
+        backgroundColor: colors.faint,
+        borderRadius: '2px',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          width: `${progress * 100}%`,
+          backgroundColor: barColor,
+          transition: 'width 0.5s, background-color 0.5s',
+          boxShadow: `0 0 6px ${barColor}55`,
+        }} />
+      </div>
+      <div style={{
+        textAlign: 'center',
+        fontSize: '9px',
+        letterSpacing: '2px',
+        color: barColor,
+        marginTop: '3px',
+      }}>
+        RESCUE: DAY {day}/{effectiveWinDay}
+      </div>
+    </div>
+  );
+}
 
 export default function GameScreen({ state, onChoice, onAdvance }) {
   const [showBriefing, setShowBriefing] = useState(false);
@@ -78,12 +112,16 @@ export default function GameScreen({ state, onChoice, onAdvance }) {
         </div>
       </div>
 
+      {/* Rescue Countdown Bar */}
+      <RescueBar day={state.day} items={state.items} />
+
       {/* Resources */}
       <StatusBar
         food={state.food}
         medicine={state.medicine}
         ammo={state.ammo}
         groupMorale={state.groupMorale}
+        prevResources={state.prevResources}
       />
 
       {/* Items */}
@@ -145,7 +183,7 @@ export default function GameScreen({ state, onChoice, onAdvance }) {
 
       {/* Survivor Roster */}
       <div style={{ marginBottom: '12px' }}>
-        <SurvivorRoster survivors={state.survivors} />
+        <SurvivorRoster survivors={state.survivors} day={state.day} />
       </div>
 
       {/* Game Log */}

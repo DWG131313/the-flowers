@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { colors, crt } from './styles/theme.js';
 import { generateStartingGroup, aliveSurvivors } from './game/survivor.js';
 import { resetEventHistory, generateEvent } from './game/eventGenerator.js';
@@ -16,6 +16,29 @@ import TitleScreen from './components/TitleScreen.jsx';
 import TutorialScreen from './components/TutorialScreen.jsx';
 import GameScreen from './components/GameScreen.jsx';
 import GameOverScreen from './components/GameOverScreen.jsx';
+
+const SAVE_KEY = 'flowers_save';
+
+function saveGame(state) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (e) { /* ignore quota errors */ }
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearSave() {
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch (e) { /* ignore */ }
+}
 
 function createInitialState() {
   resetEventHistory();
@@ -39,6 +62,7 @@ function createInitialState() {
     gameOverReason: '',
     currentEvent: null,
     items: [],
+    prevResources: null,
   };
 
   state.currentEvent = generateEvent(state);
@@ -48,21 +72,41 @@ function createInitialState() {
 export default function App() {
   const [screen, setScreen] = useState('title');
   const [gameState, setGameState] = useState(null);
+  const [hasSave, setHasSave] = useState(false);
+
+  useEffect(() => {
+    setHasSave(!!loadSave());
+  }, []);
 
   const handleStart = useCallback(() => {
     setScreen('tutorial');
   }, []);
 
   const handleTutorialComplete = useCallback(() => {
-    setGameState(createInitialState());
+    clearSave();
+    const state = createInitialState();
+    setGameState(state);
+    saveGame(state);
     setScreen('game');
+  }, []);
+
+  const handleContinue = useCallback(() => {
+    const saved = loadSave();
+    if (saved) {
+      setGameState(saved);
+      setScreen('game');
+    }
   }, []);
 
   const handleChoice = useCallback((effectKey) => {
     setGameState(prev => {
       const newState = applyChoice(prev, prev.currentEvent, effectKey);
+      newState.prevResources = { food: prev.food, medicine: prev.medicine, ammo: prev.ammo, morale: prev.groupMorale };
       if (newState.gameOver) {
+        clearSave();
         setTimeout(() => setScreen('gameover'), 100);
+      } else {
+        saveGame(newState);
       }
       return newState;
     });
@@ -71,14 +115,20 @@ export default function App() {
   const handleAdvance = useCallback(() => {
     setGameState(prev => {
       const newState = advancePhase(prev);
+      newState.prevResources = { food: prev.food, medicine: prev.medicine, ammo: prev.ammo, morale: prev.groupMorale };
       if (newState.gameOver) {
+        clearSave();
         setTimeout(() => setScreen('gameover'), 100);
+      } else {
+        saveGame(newState);
       }
       return newState;
     });
   }, []);
 
   const handleRestart = useCallback(() => {
+    clearSave();
+    setHasSave(false);
     setGameState(createInitialState());
     setScreen('game');
   }, []);
@@ -95,7 +145,7 @@ export default function App() {
       <div style={crt.scanlines} />
 
       {screen === 'title' && (
-        <TitleScreen onStart={handleStart} />
+        <TitleScreen onStart={handleStart} hasSave={hasSave} onContinue={handleContinue} />
       )}
       {screen === 'tutorial' && (
         <TutorialScreen onComplete={handleTutorialComplete} />

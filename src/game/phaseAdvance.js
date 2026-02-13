@@ -13,6 +13,7 @@ import {
 } from './constants.js';
 import { generateEvent } from './eventGenerator.js';
 import { hasItem } from './items.js';
+import { getEquipmentBonus } from './equipment.js';
 
 export function advancePhase(state) {
   const newState = cloneState(state);
@@ -64,6 +65,14 @@ export function advancePhase(state) {
         s.morale = Math.min(100, s.morale + 3);
       });
     }
+
+    // === EQUIPMENT DAILY BONUSES ===
+    alive.forEach(s => {
+      const moraleBonus = getEquipmentBonus(s, 'moraleBonus');
+      if (moraleBonus > 0) s.morale = Math.min(100, s.morale + moraleBonus);
+      const healthRecovery = getEquipmentBonus(s, 'healthRecovery');
+      if (healthRecovery > 0) s.health = Math.min(100, s.health + healthRecovery);
+    });
   }
 
   // === TIMER CHECKS (every phase) ===
@@ -75,6 +84,7 @@ export function advancePhase(state) {
         s.alive = false;
         s.health = 0;
         s.causeOfDeath = 'Turned — untreated bite.';
+        s.deathDay = newState.day;
         newState.log.push(`☠ ${s.name} turned. The infection won.`);
 
         // May injure another survivor
@@ -99,6 +109,7 @@ export function advancePhase(state) {
           s.alive = false;
           s.health = 0;
           s.causeOfDeath = 'Turned despite treatment.';
+          s.deathDay = newState.day;
           newState.log.push(`☠ ${s.name} turned despite treatment.`);
         }
       }
@@ -110,7 +121,8 @@ export function advancePhase(state) {
       if (daysSinceInjury >= INJURY_ILLNESS_TIMER_DAYS) {
         const hasSurgKit = hasItem(newState, 'med_kit');
         const baseChance = s.injuredTreated ? TREATED_RECOVERY_CHANCE : UNTREATED_RECOVERY_CHANCE;
-        const chance = hasSurgKit && s.injuredTreated ? 0.8 : baseChance;
+        const equipRecovery = getEquipmentBonus(s, 'recoveryBonus');
+        const chance = (hasSurgKit && s.injuredTreated ? 0.8 : baseChance) + equipRecovery;
         if (Math.random() < chance) {
           s.injured = false;
           s.injuredDay = null;
@@ -123,6 +135,7 @@ export function advancePhase(state) {
           if (s.health <= 0) {
             s.alive = false;
             s.causeOfDeath = 'Died from untreated injury.';
+            s.deathDay = newState.day;
             newState.log.push(`☠ ${s.name} didn't make it. The three-day rule.`);
           }
         }
@@ -135,7 +148,8 @@ export function advancePhase(state) {
       if (daysSinceSick >= INJURY_ILLNESS_TIMER_DAYS) {
         const hasSurgKit2 = hasItem(newState, 'med_kit');
         const baseChance2 = s.sickTreated ? TREATED_RECOVERY_CHANCE : UNTREATED_RECOVERY_CHANCE;
-        const chance = hasSurgKit2 && s.sickTreated ? 0.8 : baseChance2;
+        const equipRecovery2 = getEquipmentBonus(s, 'recoveryBonus');
+        const chance = (hasSurgKit2 && s.sickTreated ? 0.8 : baseChance2) + equipRecovery2;
         if (Math.random() < chance) {
           s.sick = false;
           s.sickDay = null;
@@ -148,6 +162,7 @@ export function advancePhase(state) {
           if (s.health <= 0) {
             s.alive = false;
             s.causeOfDeath = 'Died from illness.';
+            s.deathDay = newState.day;
             newState.log.push(`☠ ${s.name} succumbed to illness.`);
           }
         }
@@ -160,6 +175,7 @@ export function advancePhase(state) {
     if (s.alive && s.health <= 0) {
       s.alive = false;
       if (!s.causeOfDeath) s.causeOfDeath = 'Health reached zero.';
+      s.deathDay = s.deathDay || newState.day;
       newState.log.push(`☠ ${s.name} is dead. ${s.causeOfDeath}`);
     }
   });

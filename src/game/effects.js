@@ -8,21 +8,36 @@ import {
   AMBUSH_RISK,
 } from './constants.js';
 import { addItem, hasItem, removeItem, RARE_ITEMS } from './items.js';
+import { equipItem, ALL_EQUIPMENT, getEquipmentBonus } from './equipment.js';
 
 function findTarget(state, event) {
   return state.survivors.find(s => s.id === event.targetId);
+}
+
+function reduceDamage(survivor, baseDmg) {
+  const reduction = getEquipmentBonus(survivor, 'damageMinus');
+  return Math.max(1, baseDmg - reduction);
+}
+
+function groupWeaponBonus(state) {
+  const alive = aliveSurvivors(state.survivors);
+  let total = 0;
+  alive.forEach(s => { total += getEquipmentBonus(s, 'damagePlus'); });
+  return total;
 }
 
 function killSurvivor(state, survivor, cause) {
   survivor.alive = false;
   survivor.health = 0;
   survivor.causeOfDeath = cause;
+  survivor.deathDay = state.day;
   state.log.push(`☠ ${survivor.name} is dead. ${cause}`);
 }
 
 function exileSurvivor(state, survivor, reason) {
   survivor.alive = false;
   survivor.causeOfDeath = `Exiled: ${reason}`;
+  survivor.deathDay = state.day;
   state.log.push(`→ ${survivor.name} was exiled. ${reason}`);
 }
 
@@ -175,6 +190,9 @@ export function applyChoice(state, event, effectKey) {
         pregnant: false,
         quarantined: false,
         causeOfDeath: null,
+        deathDay: null,
+        weapon: null,
+        armor: null,
       };
       newState.survivors.push(child);
       adjustGroupMorale(newState, 3);
@@ -433,7 +451,7 @@ export function applyChoice(state, event, effectKey) {
         const alive = aliveSurvivors(newState.survivors);
         if (alive.length > 0) {
           const unlucky = alive[Math.floor(Math.random() * alive.length)];
-          const dmg = 15 + Math.floor(Math.random() * 15);
+          const dmg = reduceDamage(unlucky, 15 + Math.floor(Math.random() * 15));
           unlucky.health = Math.max(0, unlucky.health - dmg);
           newState.log.push(`⚠ Ambush during the search! ${unlucky.name} took ${dmg} damage.`);
           if (unlucky.health <= 0) {
@@ -463,14 +481,15 @@ export function applyChoice(state, event, effectKey) {
     case 'ambush_fight': {
       newState.ammo = Math.max(0, newState.ammo - 5);
       const hasCombat = aliveSurvivors(newState.survivors).some(s => s.skill === 'combat');
-      if (hasCombat || Math.random() < 0.7) {
+      const weaponEdge = Math.min(0.15, groupWeaponBonus(newState) * 0.01);
+      if (hasCombat || Math.random() < (0.7 + weaponEdge)) {
         newState.log.push(`⚔ Fought off the ambush. -5 ammo.`);
         adjustGroupMorale(newState, 3);
       } else {
         const alive = aliveSurvivors(newState.survivors);
         if (alive.length > 0) {
           const unlucky = alive[Math.floor(Math.random() * alive.length)];
-          const dmg = 20 + Math.floor(Math.random() * 15);
+          const dmg = reduceDamage(unlucky, 20 + Math.floor(Math.random() * 15));
           unlucky.health = Math.max(0, unlucky.health - dmg);
           newState.log.push(`⚔ Fought back but ${unlucky.name} took ${dmg} damage. -5 ammo.`);
           if (unlucky.health <= 0) {
@@ -718,6 +737,7 @@ export function applyChoice(state, event, effectKey) {
         sick: false, sickDay: null, sickTreated: false,
         hiding: false,
         pregnant: false, quarantined: false, causeOfDeath: null,
+        deathDay: null, weapon: null, armor: null,
       };
       // Suspicious strangers have a chance of being secretly infected
       if (d.suspicious && Math.random() < 0.3) {
@@ -748,6 +768,7 @@ export function applyChoice(state, event, effectKey) {
           injured: false, injuredDay: null, injuredTreated: false,
           sick: false, sickDay: null, sickTreated: false,
           hiding: false, pregnant: false, quarantined: false, causeOfDeath: null,
+          deathDay: null, weapon: null, armor: null,
         };
         newState.survivors.push(stranger);
         adjustGroupMorale(newState, 2);
@@ -874,7 +895,8 @@ export function applyChoice(state, event, effectKey) {
     case 'horde_fight': {
       newState.ammo = Math.max(0, newState.ammo - 10);
       const hasCombat = aliveSurvivors(newState.survivors).some(s => s.skill === 'combat');
-      if (hasCombat || Math.random() < 0.5) {
+      const weaponEdge2 = Math.min(0.15, groupWeaponBonus(newState) * 0.01);
+      if (hasCombat || Math.random() < (0.5 + weaponEdge2)) {
         newState.log.push(`⚔ Held the line. Horde pushed back. Ammo spent.`);
         adjustGroupMorale(newState, 8);
         adjustGroupTrust(newState, 3);
@@ -884,7 +906,7 @@ export function applyChoice(state, event, effectKey) {
           const casualties = Math.min(2, alive.length);
           for (let i = 0; i < casualties; i++) {
             const unlucky = alive[Math.floor(Math.random() * alive.length)];
-            const dmg = 25 + Math.floor(Math.random() * 20);
+            const dmg = reduceDamage(unlucky, 25 + Math.floor(Math.random() * 20));
             unlucky.health = Math.max(0, unlucky.health - dmg);
             newState.log.push(`⚠ ${unlucky.name} took ${dmg} damage in the fight.`);
             if (unlucky.health <= 0) killSurvivor(newState, unlucky, 'Killed fighting the night horde.');
@@ -929,6 +951,151 @@ export function applyChoice(state, event, effectKey) {
           newState.log.push(`  ${unlucky.name} got clipped. -15 health. -8 food.`);
         }
       }
+      break;
+    }
+
+    // === LOOT EVENTS ===
+    case 'loot_armory_breach': {
+      newState.ammo = Math.max(0, newState.ammo - 5);
+      if (target && Math.random() < 0.7) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        newState.log.push(`★ Breached the armory! ${target.name} equipped ${item.name}.`);
+        adjustGroupMorale(newState, 3);
+      } else {
+        const alive = aliveSurvivors(newState.survivors);
+        if (alive.length > 0) {
+          const unlucky = alive[Math.floor(Math.random() * alive.length)];
+          const dmg = 20 + Math.floor(Math.random() * 15);
+          unlucky.health = Math.max(0, unlucky.health - dmg);
+          newState.log.push(`⚠ Walkers swarmed the breach. ${unlucky.name} took ${dmg} damage.`);
+          if (unlucky.health <= 0) killSurvivor(newState, unlucky, 'Killed breaching the armory.');
+        }
+        adjustGroupMorale(newState, -3);
+      }
+      break;
+    }
+    case 'loot_armory_cautious': {
+      if (target && Math.random() < 0.5) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        newState.log.push(`★ Found a side way in. ${target.name} grabbed a ${item.name}.`);
+        adjustGroupMorale(newState, 2);
+      } else {
+        newState.log.push(`→ Side entrance was blocked. Couldn't get in.`);
+      }
+      break;
+    }
+    case 'loot_armory_skip': {
+      newState.log.push(`→ Left the armory. Too many walkers.`);
+      break;
+    }
+    case 'loot_lodge_clear': {
+      if (target && Math.random() < 0.65) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        const foodGain = 4 + Math.floor(Math.random() * 4);
+        newState.food += foodGain;
+        newState.log.push(`★ Lodge cleared. ${target.name} found a ${item.name}. +${foodGain} food from the pantry.`);
+        adjustGroupMorale(newState, 3);
+      } else {
+        const alive = aliveSurvivors(newState.survivors);
+        if (alive.length > 0) {
+          const unlucky = alive[Math.floor(Math.random() * alive.length)];
+          const dmg = 10 + Math.floor(Math.random() * 10);
+          unlucky.health = Math.max(0, unlucky.health - dmg);
+          newState.log.push(`⚠ Something was inside. ${unlucky.name} took ${dmg} damage.`);
+          if (unlucky.health <= 0) killSurvivor(newState, unlucky, 'Killed clearing the hunting lodge.');
+        }
+      }
+      break;
+    }
+    case 'loot_lodge_sneak': {
+      if (target && Math.random() < 0.45) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        newState.log.push(`★ Slipped in quietly. ${target.name} grabbed a ${item.name}.`);
+        adjustGroupMorale(newState, 2);
+      } else {
+        const foodGain = 2 + Math.floor(Math.random() * 3);
+        newState.food += foodGain;
+        newState.log.push(`→ Couldn't reach the good gear. Grabbed +${foodGain} food and left.`);
+      }
+      break;
+    }
+    case 'loot_lodge_skip': {
+      newState.log.push(`→ Passed the lodge. Kept to the road.`);
+      break;
+    }
+    case 'loot_police_rush': {
+      if (target && Math.random() < 0.65) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        newState.log.push(`★ Rushed the lockers. ${target.name} suited up with a ${item.name}.`);
+        adjustGroupMorale(newState, 3);
+      } else {
+        const alive = aliveSurvivors(newState.survivors);
+        if (alive.length > 0) {
+          const unlucky = alive[Math.floor(Math.random() * alive.length)];
+          const dmg = 15 + Math.floor(Math.random() * 10);
+          unlucky.health = Math.max(0, unlucky.health - dmg);
+          newState.log.push(`⚠ Turned officer attacked! ${unlucky.name} took ${dmg} damage.`);
+          if (unlucky.health <= 0) killSurvivor(newState, unlucky, 'Killed by a turned officer.');
+        }
+      }
+      break;
+    }
+    case 'loot_police_careful': {
+      if (target && Math.random() < 0.5) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        newState.log.push(`★ Building cleared. ${target.name} found a ${item.name} in the lockers.`);
+        adjustGroupMorale(newState, 2);
+      } else {
+        newState.log.push(`→ Lockers were already cleaned out. Nothing useful.`);
+      }
+      break;
+    }
+    case 'loot_police_skip': {
+      newState.log.push(`→ Left the precinct. Didn't like the sounds inside.`);
+      break;
+    }
+    case 'loot_hospital_enter': {
+      if (target && Math.random() < 0.6) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        const medGain = 3 + Math.floor(Math.random() * 4);
+        newState.medicine += medGain;
+        newState.log.push(`★ Made it through quarantine. ${target.name} found a ${item.name}. +${medGain} medicine.`);
+        adjustGroupMorale(newState, 3);
+      } else {
+        // Infection risk
+        const alive = aliveSurvivors(newState.survivors);
+        if (alive.length > 0) {
+          const unlucky = alive[Math.floor(Math.random() * alive.length)];
+          unlucky.sick = true;
+          unlucky.sickDay = newState.day;
+          newState.log.push(`⚠ ${unlucky.name} caught something inside the quarantine zone.`);
+        }
+        adjustGroupMorale(newState, -2);
+      }
+      break;
+    }
+    case 'loot_hospital_perimeter': {
+      if (target && Math.random() < 0.4) {
+        const item = ALL_EQUIPMENT[event.lootItemId];
+        equipItem(target, event.lootItemId);
+        newState.log.push(`★ Found a supply crate outside. ${target.name} got a ${item.name}.`);
+        adjustGroupMorale(newState, 2);
+      } else {
+        const medGain = 2 + Math.floor(Math.random() * 3);
+        newState.medicine += medGain;
+        newState.log.push(`→ Perimeter picked clean. Found +${medGain} medicine.`);
+      }
+      break;
+    }
+    case 'loot_hospital_skip': {
+      newState.log.push(`→ Avoided the quarantine zone. Not worth the risk.`);
       break;
     }
 

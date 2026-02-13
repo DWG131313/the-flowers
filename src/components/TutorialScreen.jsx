@@ -3,7 +3,7 @@ import { colors, fonts, crt } from '../styles/theme.js';
 
 const PAGES = [
   {
-    title: 'BRIEFING 1/7 — SITUATION',
+    title: 'BRIEFING 1/8 — SITUATION',
     body: `The dead walk. Cities fell in weeks.
 
 You didn't choose to lead. But people followed you,
@@ -17,7 +17,7 @@ Who eats. Who doesn't.
 Who looks at the flowers.`,
   },
   {
-    title: 'BRIEFING 2/7 — OBJECTIVE',
+    title: 'BRIEFING 2/8 — OBJECTIVE',
     body: `Survive 30 days. That's how long until
 the military sweeps this sector.
 
@@ -31,7 +31,7 @@ Each phase brings one event.
 Make a decision. Live with it. Move on.`,
   },
   {
-    title: 'BRIEFING 3/7 — RESOURCES',
+    title: 'BRIEFING 3/8 — RESOURCES',
     body: `Four things keep your group alive:
 
   FOOD      Drains daily per survivor.
@@ -47,7 +47,7 @@ Make a decision. Live with it. Move on.`,
             Drop too low and people walk.`,
   },
   {
-    title: 'BRIEFING 4/7 — YOUR PEOPLE',
+    title: 'BRIEFING 4/8 — YOUR PEOPLE',
     body: `Each survivor has stats you can see:
 
   Health    0 = dead. No exceptions.
@@ -64,7 +64,30 @@ Some have pets. Pets help morale.
 Pets also eat food. Remember that.`,
   },
   {
-    title: 'BRIEFING 5/7 — THE RULES',
+    title: 'BRIEFING 5/8 — EQUIPMENT',
+    body: `Your people start with nothing. But the world
+is full of what the dead left behind.
+
+After day 5, you'll find gear in the field:
+armories, hunting lodges, police stations,
+field hospitals. Each one is a gamble.
+
+  WEAPONS   One per survivor. Red tag on their card.
+            Pipe wrenches, axes, crossbows, shotguns.
+            Better weapons mean better odds in fights.
+
+  ARMOR     One per survivor. Green tag on their card.
+            Riot shields, combat vests, gas masks.
+            Reduces damage taken. Some heal over time.
+
+Risk more for better gear. Or play it safe
+and take what the perimeter offers.
+
+Equipment stays with the survivor who found it.
+If they die, the gear goes with them.`,
+  },
+  {
+    title: 'BRIEFING 6/8 — THE RULES',
     body: `You govern by ten rules. They are brutal.
 They are the only reason you're still alive.
 
@@ -83,7 +106,7 @@ Every event will test these rules.
 Every choice will cost something.`,
   },
   {
-    title: 'BRIEFING 6/7 — THE HARD PART',
+    title: 'BRIEFING 7/8 — THE HARD PART',
     body: `Enforce the rules and people trust you.
 Break them and they don't.
 
@@ -100,7 +123,7 @@ Or save the medicine. Someone else might need it.
 The three-day clock doesn't care about fairness.`,
   },
   {
-    title: 'BRIEFING 7/7 — ONE LAST THING',
+    title: 'BRIEFING 8/8 — ONE LAST THING',
     body: `When someone has to die — bitten, broken,
 too far gone — your group has a phrase for it.
 
