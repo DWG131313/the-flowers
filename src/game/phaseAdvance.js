@@ -1,12 +1,8 @@
 import { aliveSurvivors, cloneState } from './survivor.js';
 import {
-  FOOD_DRAIN_PER_SURVIVOR_PER_DAY,
   INFECTION_TURN_DAYS,
   INJURY_ILLNESS_TIMER_DAYS,
-  TREATED_RECOVERY_CHANCE,
-  UNTREATED_RECOVERY_CHANCE,
   PET_MORALE_BONUS,
-  PET_FOOD_DRAIN_PER_DAY,
   WIN_DAY,
   PHASE_NAMES,
   PHASE_ICONS,
@@ -18,6 +14,10 @@ import { getEquipmentBonus } from './equipment.js';
 export function advancePhase(state) {
   const newState = cloneState(state);
   const alive = aliveSurvivors(newState.survivors);
+  const foodDrainRate = newState.settings?.foodDrain ?? 1.2;
+  const treatedRecovery = newState.settings?.treatedRecovery ?? 0.6;
+  const untreatedRecovery = newState.settings?.untreatedRecovery ?? 0.33;
+  const petFoodDrain = newState.settings?.petFoodDrain ?? 3;
 
   const currentPhase = newState.phase;
   const isEndOfDay = currentPhase === 2; // Dusk
@@ -35,10 +35,10 @@ export function advancePhase(state) {
     let drainMult = 1;
     if (hasCrafter) drainMult *= 0.85;
     if (hasWaterPurifier) drainMult *= 0.8;
-    const drainRate = FOOD_DRAIN_PER_SURVIVOR_PER_DAY * drainMult;
+    const drainRate = foodDrainRate * drainMult;
     const foodDrain = Math.ceil(alive.length * drainRate);
     const petCount = alive.filter(s => s.hasPet).length;
-    const petDrain = Math.ceil(petCount * PET_FOOD_DRAIN_PER_DAY);
+    const petDrain = Math.ceil(petCount * petFoodDrain);
     const totalDrain = foodDrain + petDrain;
     newState.food = Math.max(0, newState.food - totalDrain);
     newState.log.push(`🍖 -${totalDrain} food (${alive.length} survivors${petCount > 0 ? `, ${petCount} pets` : ''}${hasCrafter ? ', craft bonus' : ''}).`);
@@ -99,7 +99,7 @@ export function advancePhase(state) {
         }
       } else if (daysSinceInfection >= INFECTION_TURN_DAYS && s.infectionTreated) {
         // Treated infection — recovery check
-        if (Math.random() < TREATED_RECOVERY_CHANCE) {
+        if (Math.random() < treatedRecovery) {
           s.infected = false;
           s.infectedDay = null;
           s.infectionTreated = false;
@@ -120,7 +120,7 @@ export function advancePhase(state) {
       const daysSinceInjury = newState.day - s.injuredDay + (isEndOfDay ? 1 : 0);
       if (daysSinceInjury >= INJURY_ILLNESS_TIMER_DAYS) {
         const hasSurgKit = hasItem(newState, 'med_kit');
-        const baseChance = s.injuredTreated ? TREATED_RECOVERY_CHANCE : UNTREATED_RECOVERY_CHANCE;
+        const baseChance = s.injuredTreated ? treatedRecovery : untreatedRecovery;
         const equipRecovery = getEquipmentBonus(s, 'recoveryBonus');
         const chance = (hasSurgKit && s.injuredTreated ? 0.8 : baseChance) + equipRecovery;
         if (Math.random() < chance) {
@@ -147,7 +147,7 @@ export function advancePhase(state) {
       const daysSinceSick = newState.day - s.sickDay + (isEndOfDay ? 1 : 0);
       if (daysSinceSick >= INJURY_ILLNESS_TIMER_DAYS) {
         const hasSurgKit2 = hasItem(newState, 'med_kit');
-        const baseChance2 = s.sickTreated ? TREATED_RECOVERY_CHANCE : UNTREATED_RECOVERY_CHANCE;
+        const baseChance2 = s.sickTreated ? treatedRecovery : untreatedRecovery;
         const equipRecovery2 = getEquipmentBonus(s, 'recoveryBonus');
         const chance = (hasSurgKit2 && s.sickTreated ? 0.8 : baseChance2) + equipRecovery2;
         if (Math.random() < chance) {

@@ -122,6 +122,7 @@ export default function GameScreen({ state, onChoice, onAdvance }) {
         ammo={state.ammo}
         groupMorale={state.groupMorale}
         prevResources={state.prevResources}
+        settings={state.settings}
       />
 
       {/* Items */}

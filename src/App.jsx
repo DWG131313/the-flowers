@@ -4,13 +4,8 @@ import { generateStartingGroup, aliveSurvivors } from './game/survivor.js';
 import { resetEventHistory, generateEvent } from './game/eventGenerator.js';
 import { applyChoice } from './game/effects.js';
 import { advancePhase } from './game/phaseAdvance.js';
-import {
-  STARTING_FOOD,
-  STARTING_MEDICINE,
-  STARTING_AMMO,
-  PHASE_NAMES,
-  PHASE_ICONS,
-} from './game/constants.js';
+import { PHASE_NAMES, PHASE_ICONS } from './game/constants.js';
+import { DIFFICULTIES, getSettings } from './game/difficulty.js';
 
 import TitleScreen from './components/TitleScreen.jsx';
 import TutorialScreen from './components/TutorialScreen.jsx';
@@ -40,8 +35,9 @@ function clearSave() {
   } catch (e) { /* ignore */ }
 }
 
-function createInitialState() {
+function createInitialState(difficultyKey) {
   resetEventHistory();
+  const settings = getSettings(difficultyKey);
   const survivors = generateStartingGroup();
   const alive = aliveSurvivors(survivors);
   const groupMorale = Math.round(
@@ -51,9 +47,9 @@ function createInitialState() {
   const state = {
     day: 1,
     phase: 0,
-    food: STARTING_FOOD,
-    medicine: STARTING_MEDICINE,
-    ammo: STARTING_AMMO,
+    food: settings.startingFood,
+    medicine: settings.startingMedicine,
+    ammo: settings.startingAmmo,
     groupMorale,
     survivors,
     log: [`── ${PHASE_ICONS[0]} ${PHASE_NAMES[0].toUpperCase()}, DAY 1 ──`],
@@ -63,6 +59,8 @@ function createInitialState() {
     currentEvent: null,
     items: [],
     prevResources: null,
+    difficulty: difficultyKey,
+    settings,
   };
 
   state.currentEvent = generateEvent(state);
@@ -73,26 +71,35 @@ export default function App() {
   const [screen, setScreen] = useState('title');
   const [gameState, setGameState] = useState(null);
   const [hasSave, setHasSave] = useState(false);
+  const [difficulty, setDifficulty] = useState('road');
 
   useEffect(() => {
     setHasSave(!!loadSave());
   }, []);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback((diffKey) => {
+    setDifficulty(diffKey);
     setScreen('tutorial');
   }, []);
 
   const handleTutorialComplete = useCallback(() => {
     clearSave();
-    const state = createInitialState();
+    const state = createInitialState(difficulty);
     setGameState(state);
     saveGame(state);
     setScreen('game');
-  }, []);
+  }, [difficulty]);
 
   const handleContinue = useCallback(() => {
     const saved = loadSave();
     if (saved) {
+      // Backfill settings for old saves without difficulty
+      if (!saved.settings && saved.difficulty) {
+        saved.settings = getSettings(saved.difficulty);
+      } else if (!saved.settings) {
+        saved.settings = getSettings('rule');
+        saved.difficulty = 'rule';
+      }
       setGameState(saved);
       setScreen('game');
     }
@@ -129,8 +136,7 @@ export default function App() {
   const handleRestart = useCallback(() => {
     clearSave();
     setHasSave(false);
-    setGameState(createInitialState());
-    setScreen('game');
+    setScreen('title');
   }, []);
 
   return (

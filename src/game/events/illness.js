@@ -1,5 +1,4 @@
 import { aliveSurvivors } from '../survivor.js';
-import { MEDICINE_COST_TREATMENT } from '../constants.js';
 
 const ASCII_ART = `
 ┌──────────────────────────────┐
@@ -37,6 +36,7 @@ export function generateIllnessEvent(state) {
   if (alive.length === 0) return null;
 
   const target = alive[Math.floor(Math.random() * alive.length)];
+  const medicineCost = state.settings?.medicineCost ?? 9;
 
   return {
     type: 'illness',
@@ -47,9 +47,9 @@ export function generateIllnessEvent(state) {
     choices: [
       {
         label: 'Quarantine and treat',
-        detail: `Medicine and isolation. Best chance. [-${MEDICINE_COST_TREATMENT} MEDICINE]`,
+        detail: `Medicine and isolation. Best chance. [-${medicineCost} MEDICINE]`,
         effect: 'illness_treat',
-        cost: { medicine: MEDICINE_COST_TREATMENT },
+        cost: { medicine: medicineCost },
         color: 'amber',
       },
       {

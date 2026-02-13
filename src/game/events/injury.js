@@ -1,5 +1,4 @@
 import { aliveSurvivors } from '../survivor.js';
-import { MEDICINE_COST_TREATMENT } from '../constants.js';
 
 const ASCII_ART = `
 ┌──────────────────────────────┐
@@ -52,6 +51,7 @@ export function generateInjuryEvent(state) {
 
   const target = alive[Math.floor(Math.random() * alive.length)];
   const variant = pick(injuryVariants)(target);
+  const medicineCost = state.settings?.medicineCost ?? 9;
 
   return {
     type: 'injury',
@@ -63,9 +63,9 @@ export function generateInjuryEvent(state) {
     choices: [
       {
         label: 'Treat with medicine',
-        detail: `Spend ${MEDICINE_COST_TREATMENT} medicine. Better odds. [-${MEDICINE_COST_TREATMENT} MEDICINE]`,
+        detail: `Spend ${medicineCost} medicine. Better odds. [-${medicineCost} MEDICINE]`,
         effect: 'injury_treat',
-        cost: { medicine: MEDICINE_COST_TREATMENT },
+        cost: { medicine: medicineCost },
         color: 'amber',
       },
       {

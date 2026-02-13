@@ -1,11 +1,8 @@
 import { aliveSurvivors, cloneState, generateSurvivor } from './survivor.js';
 import {
-  MEDICINE_COST_TREATMENT,
   AMMO_COST_BURN,
-  BODY_LOOT_INFECTION_RISK,
   CONVINCE_SUCCESS_RATE,
   PET_FOOD_GAINED,
-  AMBUSH_RISK,
 } from './constants.js';
 import { addItem, hasItem, removeItem, RARE_ITEMS } from './items.js';
 import { equipItem, ALL_EQUIPMENT, getEquipmentBonus } from './equipment.js';
@@ -56,6 +53,9 @@ function adjustGroupTrust(state, amount) {
 export function applyChoice(state, event, effectKey) {
   const newState = cloneState(state);
   const target = event.targetId != null ? findTarget(newState, event) : null;
+  const medicineCost = newState.settings?.medicineCost ?? 9;
+  const ambushRisk = newState.settings?.ambushRisk ?? 0.25;
+  const bodyLootInfectionRisk = newState.settings?.bodyLootInfectionRisk ?? 0.2;
 
   switch (effectKey) {
     // === BITE CHECK ===
@@ -105,7 +105,7 @@ export function applyChoice(state, event, effectKey) {
     }
     case 'bite_found_treat': {
       if (target) {
-        newState.medicine = Math.max(0, newState.medicine - MEDICINE_COST_TREATMENT);
+        newState.medicine = Math.max(0, newState.medicine - medicineCost);
         target.infected = true;
         target.infectedDay = newState.day;
         target.quarantined = true;
@@ -352,7 +352,7 @@ export function applyChoice(state, event, effectKey) {
 
       // Infection risk
       const alive = aliveSurvivors(newState.survivors);
-      if (alive.length > 0 && Math.random() < BODY_LOOT_INFECTION_RISK) {
+      if (alive.length > 0 && Math.random() < bodyLootInfectionRisk) {
         const unlucky = alive[Math.floor(Math.random() * alive.length)];
         unlucky.sick = true;
         unlucky.sickDay = newState.day;
@@ -369,12 +369,12 @@ export function applyChoice(state, event, effectKey) {
     // === INJURY ===
     case 'injury_treat': {
       if (target) {
-        newState.medicine = Math.max(0, newState.medicine - MEDICINE_COST_TREATMENT);
+        newState.medicine = Math.max(0, newState.medicine - medicineCost);
         target.injured = true;
         target.injuredDay = newState.day;
         target.injuredTreated = true;
         target.quarantined = true;
-        newState.log.push(`💉 ${target.name} treated. Three-day clock starts. -${MEDICINE_COST_TREATMENT} medicine.`);
+        newState.log.push(`💉 ${target.name} treated. Three-day clock starts. -${medicineCost} medicine.`);
       }
       break;
     }
@@ -401,12 +401,12 @@ export function applyChoice(state, event, effectKey) {
     // === ILLNESS ===
     case 'illness_treat': {
       if (target) {
-        newState.medicine = Math.max(0, newState.medicine - MEDICINE_COST_TREATMENT);
+        newState.medicine = Math.max(0, newState.medicine - medicineCost);
         target.sick = true;
         target.sickDay = newState.day;
         target.sickTreated = true;
         target.quarantined = true;
-        newState.log.push(`💉 ${target.name} quarantined and treated. -${MEDICINE_COST_TREATMENT} medicine.`);
+        newState.log.push(`💉 ${target.name} quarantined and treated. -${medicineCost} medicine.`);
       }
       break;
     }
@@ -447,7 +447,7 @@ export function applyChoice(state, event, effectKey) {
       newState.log.push(`🔍 Full search: +${foodGain} food, +${medGain} medicine, +${ammoGain} ammo.`);
 
       // Ambush risk
-      if (Math.random() < AMBUSH_RISK) {
+      if (Math.random() < ambushRisk) {
         const alive = aliveSurvivors(newState.survivors);
         if (alive.length > 0) {
           const unlucky = alive[Math.floor(Math.random() * alive.length)];

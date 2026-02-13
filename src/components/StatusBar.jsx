@@ -1,5 +1,4 @@
 import { colors, fonts, crt, shared, resourceColor } from '../styles/theme.js';
-import { STARTING_FOOD, STARTING_MEDICINE, STARTING_AMMO } from '../game/constants.js';
 
 function DeltaIndicator({ current, prev }) {
   if (prev == null) return null;
@@ -19,12 +18,15 @@ function DeltaIndicator({ current, prev }) {
   );
 }
 
-export default function StatusBar({ food, medicine, ammo, groupMorale, prevResources }) {
+export default function StatusBar({ food, medicine, ammo, groupMorale, prevResources, settings }) {
   const prev = prevResources || {};
+  const startFood = settings?.startingFood ?? 60;
+  const startMed = settings?.startingMedicine ?? 30;
+  const startAmmo = settings?.startingAmmo ?? 40;
   const resources = [
-    { label: 'FOOD', value: food, max: STARTING_FOOD * 1.5, critical: food === 0, prev: prev.food },
-    { label: 'MED', value: medicine, max: STARTING_MEDICINE * 1.5, critical: medicine === 0, prev: prev.medicine },
-    { label: 'AMMO', value: ammo, max: STARTING_AMMO * 1.5, critical: ammo === 0, prev: prev.ammo },
+    { label: 'FOOD', value: food, max: startFood * 1.5, critical: food === 0, prev: prev.food },
+    { label: 'MED', value: medicine, max: startMed * 1.5, critical: medicine === 0, prev: prev.medicine },
+    { label: 'AMMO', value: ammo, max: startAmmo * 1.5, critical: ammo === 0, prev: prev.ammo },
     { label: 'MORALE', value: groupMorale, max: 100, critical: groupMorale < 15, prev: prev.morale },
   ];
 

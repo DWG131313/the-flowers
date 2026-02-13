@@ -1,5 +1,4 @@
 import { aliveSurvivors } from '../survivor.js';
-import { AMBUSH_RISK } from '../constants.js';
 
 const SCAVENGE_ART = `
 ┌──────────────────────────────┐

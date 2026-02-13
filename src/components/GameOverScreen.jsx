@@ -1,4 +1,5 @@
 import { colors, fonts, crt } from '../styles/theme.js';
+import { DIFFICULTIES } from '../game/difficulty.js';
 import SurvivorSprite from './SurvivorSprite.jsx';
 
 const WIN_ART = `
@@ -91,6 +92,7 @@ export default function GameOverScreen({ state, onRestart }) {
   const won = state.gameWon;
   const alive = state.survivors.filter(s => s.alive);
   const dead = state.survivors.filter(s => !s.alive);
+  const diff = DIFFICULTIES[state.difficulty];
 
   return (
     <div style={{
@@ -123,6 +125,20 @@ export default function GameOverScreen({ state, onRestart }) {
       }}>
         {state.gameOverReason}
       </div>
+
+      {/* Difficulty label */}
+      {diff && (
+        <div style={{
+          fontSize: '10px',
+          letterSpacing: '3px',
+          color: diff.color,
+          textShadow: `0 0 6px ${diff.color}44`,
+          marginTop: '16px',
+          textAlign: 'center',
+        }}>
+          {diff.name}
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{
