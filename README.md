@@ -10,9 +10,9 @@ The game is driven by 10 brutal survival rules your group lives by. Every few ho
 
 Think Oregon Trail meets The Walking Dead.
 
-## Why We Built It
+## Why I Built It
 
-This game started as an idea from my niece. She came up with the concept and the rules, and we turned it into a real, playable game. The title — "The Flowers" — comes from a recurring phrase in the game: when someone has to be killed, they "look at the flowers." It's never explained. You just understand.
+This game started as an idea from my niece. She came up with the concept and the rules, and we turned it into a real, playable game. The title — "The Flowers" — comes from a recurring phrase in the game: when someone has to be killed due to infection from the zombie virus, they "look at the flowers." It's never explained. You just understand.
 
 ## The Real Purpose
 
@@ -37,7 +37,7 @@ Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Game Features
 
-- 10 rule-based event systems (bite checks, pregnancy, children, combat refusal, defection, pets, body burning, injury/illness timers, and more)
+- 10 rule-based event systems (bite checks, child birth, children, combat refusal, defection, pets, body burning, injury/illness timers, and more)
 - Weighted random event generation based on current game state
 - 8 procedurally generated survivors with names, ages, skills, trust, morale, and hidden states
 - Resource management (food, medicine, ammo, morale)
