@@ -1,16 +1,48 @@
-# React + Vite
+# THE FLOWERS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A zombie apocalypse survival leadership simulation game built with React and Vite.
 
-Currently, two official plugins are available:
+## What Is It
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+THE FLOWERS is a text-based survival game styled to look like a green phosphor CRT terminal from the 1980s. You don't fight zombies directly — you lead a group of 8 survivors through 30 days of hard choices. Who eats? Who gets medicine? Who gets exiled? Who has to "look at the flowers"?
 
-## React Compiler
+The game is driven by 10 brutal survival rules your group lives by. Every few hours (dawn, midday, dusk), an event forces you to make a decision — enforce the rules, bend them, or break them entirely. Your choices affect food, medicine, ammo, morale, and whether your people trust you enough to stay.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Think Oregon Trail meets The Walking Dead.
 
-## Expanding the ESLint configuration
+## Why We Built It
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+This game started as an idea from my niece. She came up with the concept and the rules, and we turned it into a real, playable game. The title — "The Flowers" — comes from a recurring phrase in the game: when someone has to be killed, they "look at the flowers." It's never explained. You just understand.
+
+## The Real Purpose
+
+This project is strictly for fun and serves as a test of Claude Code's capabilities. The goal was to see how far we could get building a fully functional, playable game with minimal hand-holding — just a design brief and natural language direction. No prior game dev experience required. Just an idea and a willingness to iterate.
+
+## Tech Stack
+
+- **React 19** — UI and state management (hooks only, no external state libraries)
+- **Vite** — Build tool and dev server
+- **No UI libraries** — All styling is custom to achieve the retro CRT terminal aesthetic
+- **No backend** — Everything runs client-side
+
+## How to Run
+
+```bash
+cd ~/CodingProjects/Zombie\ Survival\ Game/the-flowers
+npm install
+npm run dev
+```
+
+Then open [http://localhost:5173](http://localhost:5173) in your browser.
+
+## Game Features
+
+- 10 rule-based event systems (bite checks, pregnancy, children, combat refusal, defection, pets, body burning, injury/illness timers, and more)
+- Weighted random event generation based on current game state
+- 8 procedurally generated survivors with names, ages, skills, trust, morale, and hidden states
+- Resource management (food, medicine, ammo, morale)
+- Retro CRT visual effects (scanlines, phosphor glow, flicker)
+- ASCII art event illustrations
+- Difficulty modes
+- Full game log tracking every decision
+- Win/lose endgame summary
