@@ -6,10 +6,10 @@
 
 A zombie apocalypse survival leadership simulation game built with React and Vite.
 
-![THE FLOWERS Title Screen](screenshots/title-screen.png)
+![THE FLOWERS Title Screen](title-screen.png)
 *The retro CRT terminal aesthetic - Green phosphor display styled like a 1980s terminal*
 
-![Gameplay Screenshot](screenshots/gameplay.png)
+![Gameplay Screenshot](gameplay.png)
 *Lead your group through brutal survival decisions - Choose who eats, who gets medicine, who looks at the flowers*
 
 ## What Is It
